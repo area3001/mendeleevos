@@ -1,0 +1,2 @@
+source "$BR2_EXTERNAL_MENDELEEV_PATH/package/mqtt2mendeleev/Config.in"
+source "$BR2_EXTERNAL_MENDELEEV_PATH/package/libmendeleev/Config.in"

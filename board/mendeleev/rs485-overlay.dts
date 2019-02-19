@@ -1,0 +1,28 @@
+// Enable the Hat interface
+/dts-v1/;
+/plugin/;
+
+/ {
+  compatible = "brcm,bcm2708";
+
+  fragment@0 {
+    target = <&uart0>;
+    __overlay__ {
+      pinctrl-names = "default";
+      pinctrl-0 = <&uart0_pins>;
+      status = "okay";
+      tx-enable-gpio = <&gpio 17 0>;
+    };
+  };
+
+  fragment@1 {
+    target = <&gpio>;
+    __overlay__ {
+      uart0_pins: uart0 {
+        brcm,pins = <14 15 17>; /* UART0: TX0 RX0 */
+        brcm,function = <4 4 1>; /* alt0, alt0 */
+        brcm,pull = <2 2 0>; /* 2:up 1:down 0:none */
+      };
+    };
+  };
+};

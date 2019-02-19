@@ -1,0 +1,8 @@
+config BR2_PACKAGE_MQTT2MENDELEEV
+	bool "mqtt2mendeleev"
+	select BR2_PACKAGE_LIBMENDELEEV
+	select BR2_PACKAGE_MOSQUITTO
+	help
+	  MQTT to Mendeleev project
+
+	  https://area3001.com

@@ -1,0 +1,165 @@
+diff --git a/drivers/tty/serial/amba-pl011.c b/drivers/tty/serial/amba-pl011.c
+index 003a5b0..c619fa2 100644
+--- a/drivers/tty/serial/amba-pl011.c
++++ b/drivers/tty/serial/amba-pl011.c
+@@ -55,10 +55,12 @@
+ #include <linux/types.h>
+ #include <linux/of.h>
+ #include <linux/of_device.h>
++#include <linux/of_gpio.h>
+ #include <linux/pinctrl/consumer.h>
+ #include <linux/sizes.h>
+ #include <linux/io.h>
+ #include <linux/acpi.h>
++#include <linux/ktime.h>
+
+ #include "amba-pl011.h"
+
+@@ -274,8 +276,17 @@ struct uart_amba_port {
+ 	struct pl011_dmatx_data	dmatx;
+ 	bool			dma_probed;
+ #endif
++	int			txen_gpio;
++	int			txen_active_val; /* 0 for active-low */
++	struct hrtimer		txen_timer;	/* tx busy poll timer */
++	ktime_t			txen_interval;
+ };
+
++static inline bool pl011_txen(struct uart_amba_port *uap)
++{
++	return uap->txen_gpio >= 0;
++}
++
+ static unsigned int pl011_reg_to_offset(const struct uart_amba_port *uap,
+ 	unsigned int reg)
+ {
+@@ -1292,6 +1303,23 @@ static inline bool pl011_dma_rx_running(struct uart_amba_port *uap)
+ #define pl011_dma_flush_buffer	NULL
+ #endif
+
++static unsigned int pl011_tx_empty(struct uart_port *port);
++
++static enum hrtimer_restart pl011_txen_disable(struct hrtimer *hrt)
++{
++	struct uart_amba_port *uap =
++			container_of(hrt, struct uart_amba_port, txen_timer);
++
++	if (pl011_tx_empty(&uap->port) == 0) {
++		/* postpone */
++		hrtimer_forward_now(&uap->txen_timer, uap->txen_interval);
++		return HRTIMER_RESTART;
++	}
++	/* done, disable txen */
++	gpio_set_value(uap->txen_gpio, !uap->txen_active_val);
++	return HRTIMER_NORESTART;
++}
++
+ static void pl011_stop_tx(struct uart_port *port)
+ {
+ 	struct uart_amba_port *uap =
+@@ -1300,6 +1328,10 @@ static void pl011_stop_tx(struct uart_port *port)
+ 	uap->im &= ~UART011_TXIM;
+ 	pl011_write(uap->im, uap, REG_IMSC);
+ 	pl011_dma_tx_stop(uap);
++	/* schedule stop tx */
++	if (pl011_txen(uap))
++	 hrtimer_start_range_ns(&uap->txen_timer, uap->txen_interval,
++				1000, HRTIMER_MODE_REL);
+ }
+
+ static void pl011_tx_chars(struct uart_amba_port *uap, bool from_irq);
+@@ -1317,6 +1349,12 @@ static void pl011_start_tx(struct uart_port *port)
+ 	struct uart_amba_port *uap =
+ 	    container_of(port, struct uart_amba_port, port);
+
++	if (pl011_txen(uap)) {
++		hrtimer_cancel(&uap->txen_timer);
++		gpio_set_value(uap->txen_gpio, uap->txen_active_val);
++	}
++
++
+ 	if (!pl011_dma_tx_start(uap))
+ 		pl011_start_tx_pio(uap);
+ }
+@@ -2209,6 +2247,11 @@ pl011_console_write(struct console *co, const char *s, unsigned int count)
+ 	unsigned long flags;
+ 	int locked = 1;
+
++	if (pl011_txen(uap)) {
++		hrtimer_cancel(&uap->txen_timer);
++		gpio_set_value(uap->txen_gpio, uap->txen_active_val);
++	}
++
+ 	clk_enable(uap->clk);
+
+ 	local_irq_save(flags);
+@@ -2245,6 +2288,8 @@ pl011_console_write(struct console *co, const char *s, unsigned int count)
+ 	local_irq_restore(flags);
+
+ 	clk_disable(uap->clk);
++	if (pl011_txen(uap))
++			gpio_set_value(uap->txen_gpio, !uap->txen_active_val);
+ }
+
+ static void __init
+@@ -2429,6 +2474,11 @@ static void pl011_unregister_port(struct uart_amba_port *uap)
+ 	int i;
+ 	bool busy = false;
+
++	if (pl011_txen(uap)) {
++		hrtimer_cancel(&uap->txen_timer);
++		gpio_set_value(uap->txen_gpio, !uap->txen_active_val);
++	}
++
+ 	for (i = 0; i < ARRAY_SIZE(amba_ports); i++) {
+ 		if (amba_ports[i] == uap)
+ 			amba_ports[i] = NULL;
+@@ -2455,6 +2505,7 @@ static int pl011_setup_port(struct device *dev, struct uart_amba_port *uap,
+ 			    struct resource *mmiobase, int index)
+ {
+ 	void __iomem *base;
++	struct device_node *np = dev->of_node;
+
+ 	base = devm_ioremap_resource(dev, mmiobase);
+ 	if (IS_ERR(base))
+@@ -2475,6 +2526,39 @@ static int pl011_setup_port(struct device *dev, struct uart_amba_port *uap,
+ 	uap->port.flags = UPF_BOOT_AUTOCONF;
+ 	uap->port.line = index;
+
++	if (np && (of_gpio_named_count(np, "tx-enable-gpio") > 0)) {
++			enum of_gpio_flags flags;
++			int gpioflags;
++			int ret;
++
++			/* init tx-busy timer */
++			uap->txen_interval = ktime_set(0, 250000);
++			hrtimer_init(&uap->txen_timer, CLOCK_MONOTONIC,
++					HRTIMER_MODE_REL);
++			uap->txen_timer.function = pl011_txen_disable;
++			/* prepare GPIO */
++			uap->txen_gpio = of_get_named_gpio_flags(np,
++					"tx-enable-gpio", 0, &flags);
++			if (flags & OF_GPIO_ACTIVE_LOW) {
++				uap->txen_active_val = 0;
++				gpioflags = GPIOF_OUT_INIT_HIGH;
++			} else {
++				uap->txen_active_val = 1;
++				gpioflags = GPIOF_OUT_INIT_LOW;
++			}
++			ret = devm_gpio_request_one(dev, uap->txen_gpio,
++					gpioflags, NULL);
++			if (ret < 0) {
++				dev_err(dev, "Request tx-enable-gpio %i failed: %i\n",
++						uap->txen_gpio, ret);
++				return ret;
++			}
++			dev_info(dev, "tx-enable via gpio%i\n", uap->txen_gpio);
++		} else {
++			/* disable txen gpio */
++			uap->txen_gpio = -1;
++		}
++
+ 	amba_ports[index] = uap;
+
+ 	return 0;
+

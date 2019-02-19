@@ -1,0 +1,6 @@
+config BR2_PACKAGE_LIBMENDELEEV
+	bool "libmendeleev"
+	help
+	  libmendeleev C library
+
+	  https://area3001.com
