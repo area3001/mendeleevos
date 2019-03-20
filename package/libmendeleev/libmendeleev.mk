@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-LIBMENDELEEV_VERSION = 131f08aedc97aa56937c2efe82c731f1ebba9259
+LIBMENDELEEV_VERSION = 030dcf9baf2cec38716d5264f753073140d44553
 LIBMENDELEEV_SITE = $(call github,area3001,libmendeleev,$(LIBMENDELEEV_VERSION))
 LIBMENDELEEV_LICENSE = LGPL-2.1+
 LIBMENDELEEV_LICENSE_FILES = COPYING.LESSER
