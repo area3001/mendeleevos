@@ -1,0 +1,14 @@
+bootfile=zImage
+fdtfile=bernardo.dtb
+loadaddr=0x82000000
+fdtaddr=88000000
+loadfdt=fatload mmc 0:1 ${fdtaddr} ${fdtfile}
+loaduimage=fatload mmc 0:1 ${loadaddr} ${bootfile}
+console=ttyO0,115200n8
+mmcroot=/dev/mmcblk0p2
+mmcrootfstype=ext4
+uenvcmd=mmc rescan; run loaduimage; run loadfdt; run fdtboot
+fdtboot=run mmc_args; bootz ${loadaddr} - ${fdtaddr}
+mmc_args=setenv bootargs console=${console} ${optargs} root=${mmcroot} rw
+rootfstype=${mmcrootfstype} rootwait
+optargs=bone_capemgr.uboot_capemgr_enabled=1 rootwait coherent_pool=1M net.ifnames=0

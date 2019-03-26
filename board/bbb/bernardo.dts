@@ -1,0 +1,670 @@
+/*
+ * Copyright (C) 2012 Texas Instruments Incorporated - http://www.ti.com/
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+/dts-v1/;
+
+#include "am33xx.dtsi"
+
+/ {
+	model = "TI AM335x BeagleBone";
+	compatible = "ti,am335x-bone", "ti,am33xx";
+};
+
+/ {
+	cpus {
+		cpu@0 {
+			cpu0-supply = <&dcdc2_reg>;
+		};
+	};
+
+	memory {
+		device_type = "memory";
+		reg = <0x80000000 0x20000000>; /* 512 MB */
+	};
+
+	leds {
+		pinctrl-names = "default";
+		pinctrl-0 = <&user_leds_pins>;
+
+		compatible = "gpio-leds";
+
+		led@1 {
+			label = "beaglelogic:green:user";
+			gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "heartbeat";
+			default-state = "on";
+		};
+
+		led@2 {
+			label = "beaglebone:green:heartbeat";
+			gpios = <&gpio1 21 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "heartbeat";
+			default-state = "off";
+		};
+
+		led@3 {
+			label = "beaglebone:green:mmc0";
+			gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "mmc0";
+			default-state = "off";
+		};
+
+		led@4 {
+			label = "beaglebone:green:usr2";
+			gpios = <&gpio1 23 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "cpu0";
+			default-state = "off";
+		};
+
+		led@5 {
+			label = "beaglebone:green:usr3";
+			gpios = <&gpio1 24 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "mmc1";
+			default-state = "off";
+		};
+	};
+
+	gpios {
+		pinctrl-names = "default";
+		pinctrl-0 = <&user_switch_pins>;
+
+		compatible = "gpio-keys";
+
+		gpio@1 {
+			label = "GPIO Key DIPSWITCH 2";
+			linux,code = <4>;
+			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	vmmcsd_fixed: fixedregulator@0 {
+		compatible = "regulator-fixed";
+		regulator-name = "vmmcsd_fixed";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+	};
+
+	pru-beaglelogic {
+		compatible = "beaglelogic,beaglelogic";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pru_pins>;
+		samplerate = <50000000>;	/* All (100 / n) MHz sample rates, n = 1,2,... */
+		sampleunit = <1>;		/* 0:16-bit samples, 1:8-bit samples */
+		triggerflags = <0>; 		/* 0:one-shot, 1:continuous */
+
+		pruss = <&pruss>;
+		interrupt-parent = <&pruss_intc>;
+		interrupts = <22>, <23>, <24>;
+		interrupt-names = "from_bl_1", "to_bl", "from_bl_2";
+	};
+
+	onewire@0 {
+		compatible = "w1-gpio";
+		pinctrl-names = "default";
+		pinctrl-0 = <&w1_pins>;
+
+		gpios = <&gpio1 29 1>;
+
+		status = "okay";
+	};
+};
+
+&am33xx_pinmux {
+	pinctrl-names = "default";
+
+	user_switch_pins: pinmux_user_switch {
+		pinctrl-single,pins = <
+			0x34 (PIN_INPUT_PULLUP | MUX_MODE7 ) /* (R12) gpmc_ad13.gpio1[13], beaglelogic user button */
+		>;
+	};
+
+	user_leds_pins: pinmux_user_leds {
+		pinctrl-single,pins = <
+			0x30 ( PIN_OUTPUT_PULLUP | MUX_MODE7 ) /* (T12) gpmc_ad12.gpio1[12], beaglelogic user led */
+			0x54 ( PIN_OUTPUT_PULLDOWN | MUX_MODE7 ) /* (V15) gpmc_a5.gpio1[21], beaglebone:green:heartbeat led */
+			0x58 ( PIN_OUTPUT_PULLUP | MUX_MODE7 ) /* (U15) gpmc_a6.gpio1[22], beaglebone:green:mmc0 led */
+			0x5c ( PIN_OUTPUT_PULLDOWN | MUX_MODE7 ) /* (T15) gpmc_a7.gpio1[23], beaglebone:green:usr2 led */
+			0x60 ( PIN_OUTPUT_PULLUP | MUX_MODE7 ) /* (V16) gpmc_a8.gpio1[24], beaglebone:green:usr3 led */
+		>;
+	};
+
+	i2c0_pins: pinmux_i2c0_pins {
+		pinctrl-single,pins = <
+			0x188 (PIN_INPUT_PULLUP | MUX_MODE0)	/* i2c0_sda.i2c0_sda */
+			0x18c (PIN_INPUT_PULLUP | MUX_MODE0)	/* i2c0_scl.i2c0_scl */
+		>;
+	};
+
+	i2c1_pins: pinmux_i2c1_pins {
+		pinctrl-single,pins = <
+			0x15c ( PIN_INPUT | MUX_MODE2 ) /* (A16) spi0_cs0.I2C1_SCL */
+			0x158 ( PIN_INPUT | MUX_MODE2 ) /* (B16) spi0_d1.I2C1_SDA */
+		>;
+	};
+
+	i2c2_pins: pinmux_i2c2_pins {
+		pinctrl-single,pins = <
+			0x178 (PIN_INPUT_PULLUP | MUX_MODE3)	/* uart1_ctsn.i2c2_sda */
+			0x17c (PIN_INPUT_PULLUP | MUX_MODE3)	/* uart1_rtsn.i2c2_scl */
+			0x40  (PIN_OUTPUT_PULLDOWN | MUX_MODE7) /* (R13) gpmc_a0.gpio1[16], CFG.WP */
+			0x78  (PIN_OUTPUT_PULLDOWN | MUX_MODE7) /* (U18) gpmc_be1n.gpio1[28], ID.WP */
+		>;
+	};
+
+	davinci_mdio_default: davinci_mdio_default {
+		pinctrl-single,pins = <
+			/* MDIO */
+			0x148 (PIN_INPUT_PULLUP | SLEWCTRL_FAST | MUX_MODE0)	/* mdio_data.mdio_data */
+			0x14c (PIN_OUTPUT_PULLUP | MUX_MODE0)			/* mdio_clk.mdio_clk */
+		>;
+	};
+
+	davinci_mdio_sleep: davinci_mdio_sleep {
+		pinctrl-single,pins = <
+			/* MDIO reset value */
+			0x148 (PIN_INPUT_PULLDOWN | MUX_MODE7)
+			0x14c (PIN_INPUT_PULLDOWN | MUX_MODE7)
+		>;
+	};
+
+	mmc1_pins: pinmux_mmc1_pins {
+		pinctrl-single,pins = <
+			0x160 ( PIN_INPUT | MUX_MODE7 ) /* (C15) spi0_cs1.gpio0[6] */
+		>;
+	};
+
+	emmc_pins: pinmux_emmc_pins {
+		pinctrl-single,pins = <
+			0x80 ( PIN_INPUT_PULLUP | MUX_MODE2 ) /* (U9) gpmc_csn1.mmc1_clk */
+			0x84 ( PIN_INPUT_PULLUP | MUX_MODE2 ) /* (V9) gpmc_csn2.mmc1_cmd */
+			0x00 ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (U7) gpmc_ad0.mmc1_dat0 */
+			0x04 ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (V7) gpmc_ad1.mmc1_dat1 */
+			0x08 ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (R8) gpmc_ad2.mmc1_dat2 */
+			0x0c ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (T8) gpmc_ad3.mmc1_dat3 */
+			0x10 ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (U8) gpmc_ad4.mmc1_dat4 */
+			0x14 ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (V8) gpmc_ad5.mmc1_dat5 */
+			0x18 ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (R9) gpmc_ad6.mmc1_dat6 */
+			0x1c ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (T9) gpmc_ad7.mmc1_dat7 */
+		>;
+	};
+
+	cpsw_default: cpsw_default {
+		pinctrl-single,pins = <
+			/* Slave 1 */
+			0x108 ( PIN_INPUT | MUX_MODE0 ) /* (H16) gmii1_col.gmii1_col */
+			0x10c ( PIN_INPUT | MUX_MODE0 ) /* (H17) gmii1_crs.gmii1_crs */
+			0x110 ( PIN_INPUT_PULLUP | MUX_MODE0 ) /* (J15) gmii1_rxer.gmii1_rxer */
+			0x114 ( PIN_OUTPUT_PULLDOWN | MUX_MODE0 ) /* (J16) gmii1_txen.gmii1_txen */
+			0x118 ( PIN_INPUT_PULLUP | MUX_MODE0 ) /* (J17) gmii1_rxdv.gmii1_rxdv */
+			0x12c ( PIN_INPUT_PULLUP | MUX_MODE0 ) /* (K18) gmii1_txclk.gmii1_txclk */
+			0x130 ( PIN_INPUT_PULLUP | MUX_MODE0 ) /* (L18) gmii1_rxclk.gmii1_rxclk */
+			0x128 ( PIN_OUTPUT_PULLDOWN | MUX_MODE0 ) /* (K17) gmii1_txd0.gmii1_txd0 */
+			0x124 ( PIN_OUTPUT_PULLDOWN | MUX_MODE0 ) /* (K16) gmii1_txd1.gmii1_txd1 */
+			0x120 ( PIN_OUTPUT_PULLDOWN | MUX_MODE0 ) /* (K15) gmii1_txd2.gmii1_txd2 */
+			0x11c ( PIN_OUTPUT_PULLDOWN | MUX_MODE0 ) /* (J18) gmii1_txd3.gmii1_txd3 */
+			0x140 ( PIN_INPUT_PULLUP | MUX_MODE0 ) /* (M16) gmii1_rxd0.gmii1_rxd0 */
+			0x13c ( PIN_INPUT_PULLUP | MUX_MODE0 ) /* (L15) gmii1_rxd1.gmii1_rxd1 */
+			0x138 ( PIN_INPUT_PULLUP | MUX_MODE0 ) /* (L16) gmii1_rxd2.gmii1_rxd2 */
+			0x134 ( PIN_INPUT_PULLUP | MUX_MODE0 ) /* (L17) gmii1_rxd3.gmii1_rxd3 */
+		>;
+	};
+
+	cpsw_sleep: cpsw_sleep {
+		pinctrl-single,pins = <
+			/* Slave 1 reset value */
+			0x108 (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (H16) gmii1_col.gmii1_col */
+			0x10c (PIN_INPUT_PULLDOWN | MUX_MODE7) /* (H17) gmii1_crs.gmii1_crs */
+			0x114 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* mii1_txen.rgmii1_tctl */
+			0x118 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* mii1_rxdv.rgmii1_rctl */
+			0x11c (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* mii1_txd3.rgmii1_txd3 */
+			0x120 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* mii1_txd2.rgmii1_txd2 */
+			0x124 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* mii1_txd1.rgmii1_txd1 */
+			0x128 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* mii1_txd0.rgmii1_txd0 */
+			0x12c (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* mii1_txclk.rgmii1_txclk */
+			0x130 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* mii1_rxclk.rgmii1_rxclk */
+			0x134 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* mii1_rxd3.rgmii1_rxd3 */
+			0x138 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* mii1_rxd2.rgmii1_rxd2 */
+			0x13c (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* mii1_rxd1.rgmii1_rxd1 */
+			0x140 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* mii1_rxd0.rgmii1_rxd0 */
+		>;
+	};
+
+	pru_pins: pinmux_pru_pins {
+		pinctrl-single,pins = <
+			0xa0 ( PIN_INPUT_PULLDOWN | MUX_MODE6 ) /* P8_45 (R1) lcd_data0.pr1_pru1_pru_r31[0] */
+			0xa4 ( PIN_INPUT_PULLDOWN | MUX_MODE6 ) /* P8_46 (R2) lcd_data1.pr1_pru1_pru_r31[1] */
+			0xa8 ( PIN_INPUT_PULLDOWN | MUX_MODE6 ) /* P8_43 (R3) lcd_data2.pr1_pru1_pru_r31[2] */
+			0xac ( PIN_INPUT_PULLDOWN | MUX_MODE6 ) /* P8_44 (R4) lcd_data3.pr1_pru1_pru_r31[3] */
+			0xb0 ( PIN_INPUT_PULLDOWN | MUX_MODE6 ) /* P8_41 (T1) lcd_data4.pr1_pru1_pru_r31[4] */
+			0xb4 ( PIN_INPUT_PULLDOWN | MUX_MODE6 ) /* P8_42 (T2) lcd_data5.pr1_pru1_pru_r31[5] */
+			0xb8 ( PIN_INPUT_PULLDOWN | MUX_MODE6 ) /* P8_39 (T3) lcd_data6.pr1_pru1_pru_r31[6] */
+			0xbc ( PIN_INPUT_PULLDOWN | MUX_MODE6 ) /* P8_40 (T4) lcd_data7.pr1_pru1_pru_r31[7] */
+			0xe0 ( PIN_INPUT_PULLDOWN | MUX_MODE6 ) /* P8_27 (U5) lcd_vsync.pr1_pru1_pru_r31[8] */
+			0xe4 ( PIN_INPUT_PULLDOWN | MUX_MODE6 ) /* P8_29 (R5) lcd_hsync.pr1_pru1_pru_r31[9] */
+			0xe8 ( PIN_INPUT_PULLDOWN | MUX_MODE6 ) /* P8_28 (V5) lcd_pclk.pr1_pru1_pru_r31[10] */
+			0xec ( PIN_INPUT_PULLDOWN | MUX_MODE6 ) /* P8_30 (R6) lcd_ac_bias_en.pr1_pru1_pru_r31[11] */
+
+			// emmc.clk
+			//0x80 ( PIN_INPUT_PULLDOWN | MUX_MODE6 ) /* (U9) gpmc_csn1.pr1_pru1_pru_r31[12] */
+			// emmc.cmd
+			//0x84 ( PIN_INPUT_PULLDOWN | MUX_MODE6 ) /* (V9) gpmc_csn2.pr1_pru1_pru_r31[13] */
+
+			// uart0.rxd
+			//0x170 ( PIN_INPUT_PULLDOWN | MUX_MODE6 ) /* P9_26 (E15) uart0_rxd.pr1_pru1_pru_r31[14] */
+			// uart0.txd
+			//0x174 ( PIN_INPUT_PULLDOWN | MUX_MODE6 ) /* P9_24 (E16) uart0_txd.pr1_pru1_pru_r31[15] */
+
+			// i2c1.sda
+			//0x1b0 ( PIN_INPUT_PULLDOWN | MUX_MODE5 ) /*  (A15) xdma_event_intr0.pr1_pru1_pru_r31[16] */
+
+			//0x64 ( PIN_OUTPUT | MUX_MODE7 ) /* P9_13 (U16) gpmc_a9.gpio1[25] - GPIO_VSEL*/
+			//0x68 ( PIN_OUTPUT | MUX_MODE7 ) /* (T16) gpmc_a10.gpio1[26] - GPIO_OE */
+		>;
+	};
+
+	w1_pins: pinmux_w1_pins {
+		pinctrl-single,pins = <
+			0x7c ( PIN_INPUT_PULLDOWN | MUX_MODE7 ) /* (V6) gpmc_csn0.gpio1[29], 1 wire pin (TODO) */
+		>;
+	};
+
+	uart0_pins: pinmux_uart0_pins {
+		pinctrl-single,pins = <
+			0x170 ( PIN_INPUT_PULLUP | MUX_MODE0 ) /* (E15) uart0_rxd.uart0_rxd */
+			0x174 ( PIN_OUTPUT_PULLDOWN | MUX_MODE0 ) /* (E16) uart0_txd.uart0_txd */
+		>;
+	};
+
+	can1_pins: pinmux_can1_pins {
+		pinctrl-single,pins = <
+			0x184 ( PIN_INPUT_PULLUP | MUX_MODE2 ) /* (D15) uart1_txd.dcan1_rx */
+			0x180 ( PIN_OUTPUT | MUX_MODE2 ) /* (D16) uart1_rxd.dcan1_tx */
+		>;
+	};
+
+	// ttl
+	uart2_pins: pinmux_uart2_pins {
+		pinctrl-single,pins = <
+			0x150 ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (A17) spi0_sclk.uart2_rxd */
+			0x154 ( PIN_OUTPUT_PULLDOWN | MUX_MODE1 ) /* (B17) spi0_d0.uart2_txd */
+		>;
+	};
+
+	// rs232
+	uart4_pins: pinmux_uart4_pins {
+		pinctrl-single,pins = <
+			0x70 ( PIN_INPUT_PULLUP | MUX_MODE6 ) /* (T17) gpmc_wait0.uart4_rxd */
+			0x74 ( PIN_OUTPUT_PULLDOWN | MUX_MODE6 ) /* (U17) gpmc_wpn.uart4_txd */
+			0xd0 ( PIN_INPUT_PULLUP | MUX_MODE6 ) /* (V2) lcd_data12.uart4_ctsn */
+			0xd4 ( PIN_OUTPUT_PULLDOWN | MUX_MODE6 ) /* (V3) lcd_data13.uart4_rtsn */
+		>;
+	};
+
+	// rs485
+	uart5_pins: pinmux_uart5_pins {
+		pinctrl-single,pins = <
+			0xc4 ( PIN_INPUT_PULLUP | MUX_MODE4 ) /* (U2) lcd_data9.uart5_rxd */
+			0xc0 ( PIN_OUTPUT_PULLDOWN | MUX_MODE4 ) /* (U1) lcd_data8.uart5_txd */
+			0xdc ( PIN_OUTPUT_PULLDOWN | MUX_MODE6 ) /* (T5) lcd_data15.uart5_rtsn */
+			// configure T5 as GPIO when using the old omap_serial driver
+			// 0xdc ( PIN_OUTPUT_PULLDOWN | MUX_MODE7 ) /* (T5) lcd_data15.gpio0[11] */
+		>;
+	};
+
+	// spi1.cs1 is in conflict with i2c2.scl
+	spi1_pins: pinmux_spi1_pins {
+		pinctrl-single,pins = <
+			0x190 ( PIN_INPUT_PULLUP | MUX_MODE3 ) /* (A13) mcasp0_aclkx.spi1_sclk */
+			0x194 ( PIN_INPUT_PULLUP | MUX_MODE3 ) /* (B13) mcasp0_fsx.spi1_d0 */
+			0x198 ( PIN_OUTPUT_PULLUP | MUX_MODE3 ) /* (D12) mcasp0_axr0.spi1_d1 */
+			0x19c ( PIN_OUTPUT_PULLUP | MUX_MODE3 ) /* (C12) mcasp0_ahclkr.spi1_cs0 */
+		>;
+	};
+
+	eqep0_pins: pinmux_eqep0_pins {
+		pinctrl-single,pins = <
+			0x1a0 ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (B12) mcasp0_aclkr.eQEP0A_in */
+			0x1a4 ( PIN_INPUT_PULLUP | MUX_MODE1 ) /* (C13) mcasp0_fsr.eQEP0B_in */
+		>;
+	};
+
+	rtc0_pins: pinmux_rtc0_pins {
+		pinctrl-single,pins = <
+			0x1f8 ( PIN_INPUT_PULLUP | MUX_MODE0 ) /* (B5) RTC_PORz.RTC_PORz */
+			0x200 ( PIN_OUTPUT_PULLDOWN | MUX_MODE0 ) /* (C5) EXT_WAKEUP.EXT_WAKEUP */
+			0x1fc ( PIN_INPUT_PULLUP | MUX_MODE0 ) /* (C6) PMIC_POWER_EN.PMIC_POWER_EN */
+			0x204 ( PIN_INPUT_PULLUP | MUX_MODE0 ) /* (B4) ENZ_KALDO_1P8V.ENZ_KALDO_1P8V */
+		>;
+	};
+};
+
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pins>;
+
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi1_pins>;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "spidev";
+		reg = <0>;
+		spi-max-frequency = <24000000>;
+	};
+
+	channel@1 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "spidev";
+		reg = <1>;
+		spi-max-frequency = <24000000>;
+	};
+};
+
+&dcan1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&can1_pins>;
+	status = "okay";
+};
+
+// ttl
+&uart2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart2_pins>;
+	status = "okay";
+};
+
+// rs232
+&uart4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart4_pins>;
+	status = "okay";
+};
+
+// rs485 (omap_serial driver)
+// &uart5 {
+//	pinctrl-names = "default";
+//	pinctrl-0 = <&uart5_pins>;
+//	status = "okay";
+//
+//	rs485-rts-delay = <0 0>;
+//
+//	rts-gpio = <&gpio0 11 1>; /*  GPIO_ACTIVE_HIGH>; */
+//	rs485-rts-active-high;
+//	linux,rs485-enabled-at-boot-time;
+//};
+
+// rs485 (8250 serial driver)
+// use ioctl calls to put driver in rs485 mode
+// see: Documentation/serial/serial-rs485.txt
+&uart5 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart5_pins>;
+	status = "okay";
+};
+
+&usb {
+	status = "okay";
+};
+
+&usb_ctrl_mod {
+	status = "okay";
+};
+
+&usb0_phy {
+	status = "okay";
+};
+
+&usb1_phy {
+	status = "okay";
+};
+
+&usb0 {
+	status = "okay";
+	dr_mode = "peripheral";
+};
+
+&usb1 {
+	status = "okay";
+	dr_mode = "host";
+};
+
+&cppi41dma  {
+	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c0_pins>;
+
+	status = "okay";
+	clock-frequency = <400000>;
+
+	tps: tps@24 {
+		reg = <0x24>;
+	};
+
+	baseboard_eeprom: baseboard_eeprom@50 {
+		compatible = "at,24c256";
+		reg = <0x50>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		baseboard_data: baseboard_data@0 {
+			reg = <0 0x100>;
+		};
+	};
+};
+
+&i2c1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c1_pins>;
+
+	status = "okay";
+	clock-frequency = <400000>;
+
+	ssd1306: oled@3c {
+		compatible = "solomon,ssd1306fb-i2c";
+		reg = <0x3c>;
+		solomon,height = <64>;
+		solomon,width = <128>;
+		solomon,page-offset = <0>;
+	};
+};
+
+&i2c2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c2_pins>;
+
+	status = "okay";
+	clock-frequency = <400000>;
+
+	bernardo_eeprom: beaglelogic_eeprom@56 {
+		compatible = "at,24c256";
+		reg = <0x56>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		bernardo_data: cape_data@0 {
+			reg = <0 0x100>;
+		};
+	};
+
+	bernardortc: bq32000@68 {
+		compatible = "ti,bq32000";
+		reg = <0x68>;
+	};
+};
+
+
+/include/ "tps65217.dtsi"
+
+&tps {
+	/*
+	 * Configure pmic to enter OFF-state instead of SLEEP-state ("RTC-only
+	 * mode") at poweroff.  Most BeagleBone versions do not support RTC-only
+	 * mode and risk hardware damage if this mode is entered.
+	 *
+	 * For details, see linux-omap mailing list May 2015 thread
+	 *	[PATCH] ARM: dts: am335x-bone* enable pmic-shutdown-controller
+	 * In particular, messages:
+	 *	http://www.spinics.net/lists/linux-omap/msg118585.html
+	 *	http://www.spinics.net/lists/linux-omap/msg118615.html
+	 *
+	 * You can override this later with
+	 *	&tps {  /delete-property/ ti,pmic-shutdown-controller;  }
+	 * if you want to use RTC-only mode and made sure you are not affected
+	 * by the hardware problems. (Tip: double-check by performing a current
+	 * measurement after shutdown: it should be less than 1 mA.)
+	 */
+	ti,pmic-shutdown-controller;
+
+	regulators {
+		dcdc1_reg: regulator@0 {
+			regulator-name = "vdds_dpr";
+			regulator-always-on;
+		};
+
+		dcdc2_reg: regulator@1 {
+			/* VDD_MPU voltage limits 0.95V - 1.26V with +/-4% tolerance */
+			regulator-name = "vdd_mpu";
+			regulator-min-microvolt = <925000>;
+			regulator-max-microvolt = <1351500>;
+			regulator-boot-on;
+			regulator-always-on;
+		};
+
+		dcdc3_reg: regulator@2 {
+			/* VDD_CORE voltage limits 0.95V - 1.1V with +/-4% tolerance */
+			regulator-name = "vdd_core";
+			regulator-min-microvolt = <925000>;
+			regulator-max-microvolt = <1150000>;
+			regulator-boot-on;
+			regulator-always-on;
+		};
+
+		ldo1_reg: regulator@3 {
+			regulator-name = "vio,vrtc,vdds";
+			regulator-always-on;
+		};
+
+		ldo2_reg: regulator@4 {
+			regulator-name = "vdd_3v3aux";
+			regulator-always-on;
+		};
+
+		ldo3_reg: regulator@5 {
+			regulator-name = "vdd_1v8";
+			regulator-always-on;
+		};
+
+		ldo4_reg: regulator@6 {
+			regulator-name = "vdd_3v3a";
+			regulator-always-on;
+		};
+	};
+};
+
+&cpsw_emac0 {
+	phy_id = <&davinci_mdio>, <0>;
+	phy-mode = "mii";
+};
+
+&mac {
+	slaves = <1>;
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&cpsw_default>;
+	pinctrl-1 = <&cpsw_sleep>;
+	status = "okay";
+};
+
+&davinci_mdio {
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&davinci_mdio_default>;
+	pinctrl-1 = <&davinci_mdio_sleep>;
+	status = "okay";
+};
+
+&mmc1 {
+	status = "okay";
+	bus-width = <0x4>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&mmc1_pins>;
+	cd-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+	vmmc-supply = <&vmmcsd_fixed>;
+};
+
+&mmc2 {
+	vmmc-supply = <&vmmcsd_fixed>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&emmc_pins>;
+	bus-width = <8>;
+	status = "okay";
+};
+
+&aes {
+	status = "okay";
+};
+
+&sham {
+	status = "okay";
+};
+
+&wkup_m3_ipc {
+	ti,scale-data-fw = "am335x-bone-scale-data.bin";
+};
+
+&rtc {
+	clocks = <&clk_32768_ck>, <&clkdiv32k_ick>;
+	clock-names = "ext-clk", "int-clk";
+	system-power-controller;
+};
+
+&sgx {
+	status = "okay";
+};
+
+&pruss_soc_bus {
+	status = "okay";
+
+	pruss: pruss@4a300000 {
+		status = "okay";
+
+		pru0: pru@4a334000 {
+			status = "okay";
+		};
+
+		pru1: pru@4a338000 {
+			status = "okay";
+		};
+	};
+};
+
+&ldo3_reg {
+	regulator-min-microvolt = <1800000>;
+	regulator-max-microvolt = <1800000>;
+	regulator-always-on;
+};
+
+&cpu0_opp_table {
+	/*
+	 * All PG 2.0 silicon may not support 1GHz but some of the early
+	 * BeagleBone Blacks have PG 2.0 silicon which is guaranteed
+	 * to support 1GHz OPP so enable it for PG 2.0 on this board.
+	 */
+	oppnitro@1000000000 {
+		opp-supported-hw = <0x06 0x0100>;
+	};
+};
