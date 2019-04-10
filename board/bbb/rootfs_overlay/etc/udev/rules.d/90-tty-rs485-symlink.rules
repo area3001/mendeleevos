@@ -1,0 +1,8 @@
+# ttyO5
+SUBSYSTEM=="tty", DEVPATH=="/devices/platform/ocp/481aa000.serial/tty/ttyO*", SYMLINK+="ttyRS485"
+# ttyO0
+#SUBSYSTEM=="tty", DEVPATH=="/devices/platform/ocp/44e09000.serial/tty/ttyO*", SYMLINK+="ttyRS485"
+# ttyO2
+#SUBSYSTEM=="tty", DEVPATH=="/devices/platform/ocp/48024000.serial/tty/ttyO*", SYMLINK+="ttyRS485"
+# ttyO4
+#SUBSYSTEM=="tty", DEVPATH=="/devices/platform/ocp/481a8000.serial/tty/ttyO*", SYMLINK+="ttyRS485"

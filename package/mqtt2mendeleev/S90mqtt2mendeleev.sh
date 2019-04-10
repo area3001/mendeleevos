@@ -4,17 +4,23 @@
 #
 
 DEVICE=ttyAMA0
+HOST=localhost
+PORT=1883
+
+# Add /boot to fstab
+if [ -e /boot/settings ]; then
+	echo "Overriding defaults from /boot/settings"
+	. /boot/settings
+fi
 
 case "$1" in
 	start)
 		printf "Starting mqtt2mendeleev on ${DEVICE}..."
 		start-stop-daemon -q -S -b -m -p /var/run/mqtt2mendeleev_${DEVICE}.pid \
-			--exec /usr/bin/mqtt2mendeleev -- /dev/${DEVICE}
+			--exec /usr/bin/mqtt2mendeleev -- -h ${HOST}:${PORT} /dev/${DEVICE}
 		[ $? = 0 ] && echo "OK" || echo "FAIL"
 	;;
 	stop)
-		rm -f /dev/${DUPLICATE}
-
 		printf "Stopping mqtt2mendeleev on ${DEVICE}..."
 		start-stop-daemon -q -K -s SIGINT -p /var/run/mqtt2mendeleev_${DEVICE}.pid
 		[ $? = 0 ] && echo "OK" || echo "FAIL"
