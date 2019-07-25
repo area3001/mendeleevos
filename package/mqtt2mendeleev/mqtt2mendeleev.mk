@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-MQTT2MENDELEEV_VERSION = b22c364eecd7bd9e43a0a56dcd56684a8f8309a1
+MQTT2MENDELEEV_VERSION = 39a0d7e24271fed0b756d51114f56b6cb7213f56
 MQTT2MENDELEEV_SITE = $(call github,area3001,mqtt2mendeleev,$(MQTT2MENDELEEV_VERSION))
 MQTT2MENDELEEV_LICENSE = MIT
 MQTT2MENDELEEV_LICENSE_FILES = LICENSE
