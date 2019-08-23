@@ -33,9 +33,9 @@
 		compatible = "gpio-leds";
 
 		led@1 {
-			label = "beaglelogic:green:user";
+			label = "ext_led";
 			gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "heartbeat";
+			linux,default-trigger = "none";
 			default-state = "on";
 		};
 
@@ -76,7 +76,7 @@
 
 		gpio@1 {
 			label = "GPIO Key DIPSWITCH 2";
-			linux,code = <4>;
+			linux,code = <105>;  /* left */
 			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
 		};
 	};

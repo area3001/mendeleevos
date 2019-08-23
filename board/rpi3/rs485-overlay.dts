@@ -6,6 +6,17 @@
   compatible = "brcm,bcm2708";
 
   fragment@0 {
+    target = <&leds>;
+    __overlay__ {
+      ext_led {
+        label = "ext_led";
+        gpios = <&gpio 12 0>;
+        linux,default-trigger = "none";
+      };
+    };
+  };
+
+  fragment@1 {
     target = <&uart0>;
     __overlay__ {
       pinctrl-names = "default";
@@ -15,9 +26,38 @@
     };
   };
 
-  fragment@1 {
+  fragment@2 {
+    target-path = "/";
+    __overlay__ {
+      gpio-keys-buttons {
+        compatible = "gpio-keys";
+        #address-cells = <0>;
+        #size-cells = <0>;
+        /* all gpio's are now active low */
+
+        left {
+          label = "GPIO Key EXT_SW";
+          gpios = <&gpio 27 1>;
+          linux,code = <105>; /* left */
+        };
+      };
+    };
+  };
+
+  fragment@3 {
     target = <&gpio>;
     __overlay__ {
+
+      rbus_buttons_pins: rbus_buttons_pins{
+        brcm,pins = <27>;
+        brcm,function = <0>;
+      };
+
+      rbus_leds_pins: rbus_leds_pins {
+        brcm,pins = <12>;
+        brcm,function = <1>;
+      };
+
       uart0_pins: uart0 {
         brcm,pins = <14 15 17>; /* UART0: TX0 RX0 */
         brcm,function = <4 4 1>; /* alt0, alt0 */
