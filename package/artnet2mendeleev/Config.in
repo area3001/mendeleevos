@@ -1,0 +1,8 @@
+config BR2_PACKAGE_ARTNET2MENDELEEV
+	bool "artnet2mendeleev"
+	select BR2_PACKAGE_LIBARTNET
+	select BR2_PACKAGE_MOSQUITTO
+	help
+	  Artnet to Mendeleev bridge
+
+	  https://area3001.com

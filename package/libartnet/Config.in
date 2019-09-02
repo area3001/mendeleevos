@@ -1,0 +1,6 @@
+config BR2_PACKAGE_LIBARTNET
+	bool "libartnet"
+	help
+	  libartnet C library
+
+	  https://github.com/OpenLightingProject/libartnet
