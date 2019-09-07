@@ -1,0 +1,48 @@
+language: ruby
+
+branches:
+  only:
+  - master
+  - /^v\d+\.\d+\.\d+(-\S*)?$/
+
+sudo: required
+dist: trusty
+
+cache:
+  directories:
+    - "$HOME/br-dl"
+    - "$HOME/br-ccache"
+    - "$HOME/output/bbb"
+
+install:
+  - sudo dpkg --add-architecture i386
+  - sudo apt-get update
+  - "sudo apt-get install -y bc libc6:i386 libstdc++6:i386 zlib1g:i386 gcc-multilib"
+env:
+  matrix:
+  # - DEFCONFIG_NAME=mendeleev_rpi3_defconfig
+   - DEFCONFIG_NAME=mendeleev_bbb_defconfig
+script:
+- cd buildroot
+- echo 'Configure Buildroot'
+- make BR2_EXTERNAL=../ BR2_DL_DIR=$HOME/br-dl BR2_CCACHE_DIR=$HOME/br-ccache ${DEFCONFIG_NAME} O=$HOME/output/bbb
+- while true ; do echo "Still building" ; sleep 60 ; done &
+- stupidpid=$!
+- echo 'Build buildroot'
+- make BR2_EXTERNAL=../ BR2_DL_DIR=$HOME/br-dl BR2_CCACHE_DIR=$HOME/br-ccache O=$HOME/output/bbb > >(tee build.log |grep '>>>') 2>&1
+- kill ${stupidpid}
+- echo 'Display end of log'
+- tail -1000 build.log
+
+before_deploy:
+  - mv $HOME/output/bbb/images/sdcard.img $HOME; cd $HOME; zip sdcard.img.zip sdcard.img; sha1sum sdcard.img.zip > sdcard.img.zip.sha1
+
+deploy:
+  provider: releases
+  api_key: $GITHUB_OAUTH_TOKEN
+  file_glob: true
+  file: $HOME/sdcard.img.*
+  skip_cleanup: true
+  on:
+    repo: area3001/mendeleevos
+    tags: true
