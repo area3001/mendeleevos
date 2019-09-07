@@ -36,7 +36,7 @@
 			label = "ext_led";
 			gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "none";
-			default-state = "on";
+			default-state = "off";
 		};
 
 		led@2 {
@@ -77,7 +77,7 @@
 		gpio@1 {
 			label = "GPIO Key DIPSWITCH 2";
 			linux,code = <105>;  /* left */
-			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
 		};
 	};
 
