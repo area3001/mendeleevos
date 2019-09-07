@@ -5,27 +5,19 @@ branches:
   - master
   - /^v\d+\.\d+\.\d+(-\S*)?$/
 
-sudo: required
+sudo: false
 dist: trusty
 
 cache:
   directories:
-    - "$HOME/br-dl"
-    - "$HOME/br-ccache"
-    - "$HOME/output/bbb"
+    - $HOME/br-dl
+    - $HOME/br-ccache
+    - $HOME/output/bbb
 
-install:
-  - sudo dpkg --add-architecture i386
-  - sudo apt-get update
-  - "sudo apt-get install -y bc libc6:i386 libstdc++6:i386 zlib1g:i386 gcc-multilib"
-env:
-  matrix:
-  # - DEFCONFIG_NAME=mendeleev_rpi3_defconfig
-   - DEFCONFIG_NAME=mendeleev_bbb_defconfig
 script:
-- cd buildroot
+- cd $TRAVIS_BUILD_DIR/buildroot
 - echo 'Configure Buildroot'
-- make BR2_EXTERNAL=../ BR2_DL_DIR=$HOME/br-dl BR2_CCACHE_DIR=$HOME/br-ccache ${DEFCONFIG_NAME} O=$HOME/output/bbb
+- make BR2_EXTERNAL=../ BR2_DL_DIR=$HOME/br-dl BR2_CCACHE_DIR=$HOME/br-ccache mendeleev_bbb_defconfig O=$HOME/output/bbb
 - while true ; do echo "Still building" ; sleep 60 ; done &
 - stupidpid=$!
 - echo 'Build buildroot'
