@@ -9,6 +9,7 @@ sudo: false
 dist: trusty
 
 cache:
+  bundler: true
   directories:
     - $HOME/br-dl
     - $HOME/br-ccache
