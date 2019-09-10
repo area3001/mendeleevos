@@ -22,7 +22,7 @@ endef
 
 define MQTT2MENDELEEV_INSTALL_INIT_SYSV
 	$(INSTALL) -D -m 0755 $(MQTT2MENDELEEV_PKGDIR)/S90mqtt2mendeleev.sh \
-    $(TARGET_DIR)/etc/init.d/S90mqtt2mendeleev.sh
+		$(TARGET_DIR)/etc/init.d/S90mqtt2mendeleev.sh
 endef
 
 $(eval $(generic-package))

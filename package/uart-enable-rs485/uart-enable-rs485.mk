@@ -18,7 +18,7 @@ endef
 
 define UART_ENABLE_RS485_INSTALL_INIT_SYSV
 	$(INSTALL) -D -m 0755 $(UART_ENABLE_RS485_PKGDIR)/S15enable-rs485.sh \
-    $(TARGET_DIR)/etc/init.d/S15enable-rs485.sh
+		$(TARGET_DIR)/etc/init.d/S15enable-rs485.sh
 endef
 
 $(eval $(generic-package))

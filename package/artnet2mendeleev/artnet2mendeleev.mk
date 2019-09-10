@@ -15,7 +15,7 @@ ARTNET2MENDELEEV_AUTORECONF = YES
 
 define ARTNET2MENDELEEV_INSTALL_INIT_SYSV
 	$(INSTALL) -D -m 0755 $(ARTNET2MENDELEEV_PKGDIR)/S80artnet2mendeleev.sh \
-    $(TARGET_DIR)/etc/init.d/S80artnet2mendeleev.sh
+		$(TARGET_DIR)/etc/init.d/S80artnet2mendeleev.sh
 endef
 
 define ARTNET2MENDELEEV_POST_PATCH_FIXUP
