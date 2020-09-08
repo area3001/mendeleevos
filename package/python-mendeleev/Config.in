@@ -1,0 +1,8 @@
+config BR2_PACKAGE_PYTHON_MENDELEEV
+	bool "python-mendeleev"
+	select BR2_PACKAGE_PYTHON_SERIAL_ASYNCIO
+	select BR2_PACKAGE_PYTHON_SCAPY
+	select BR2_PACKAGE_PYTHON_ASYNC_TIMEOUT
+	depends on BR2_PACKAGE_PYTHON3
+	help
+	  pymendeleev
