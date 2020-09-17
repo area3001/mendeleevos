@@ -8,7 +8,6 @@ import argparse
 from mendeleev import MendeleevProtocol
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 NUM_ELEMENTS = 118
 CLIENT_ID = "mqtt2mendeleev_bridge"
@@ -17,7 +16,7 @@ def update():
     logger.info("update")
 
 def sensor_test():
-    logger.info('sensor test')
+    logger.info("sensor test")
 
 class TopicException(Exception):
     pass
@@ -168,13 +167,17 @@ class MendeleevBridge:
 
 def main(argv):
     parser = argparse.ArgumentParser(description="Set up Mendeleev MQTT bridge")
-    parser.add_argument("-d", "--device", required=True, help='The RS485 tty device')
-    parser.add_argument("-b", "--broker", default="localhost", help='The MQTT broker')
-    parser.add_argument("-p", "--prefix", default="mendeleev", help='The MQTT topic prefix')
-    parser.add_argument("-t", "--timeout", type=int, default=1, help='The timeout to wait for responses')
-    parser.add_argument("-w", "--broadcastwait", type=int, default=.5, help='The time to wait between broadcast messages')
+    parser.add_argument("-d", "--device", required=True, help="The RS485 tty device")
+    parser.add_argument("-b", "--broker", default="localhost", help="The MQTT broker")
+    parser.add_argument("-p", "--prefix", default="mendeleev", help="The MQTT topic prefix")
+    parser.add_argument("-t", "--timeout", type=int, default=1, help="The timeout to wait for responses")
+    parser.add_argument("-w", "--broadcastwait", type=int, default=.5, help="The time to wait between broadcast messages")
+    parser.add_argument("-l", "--log", default="INFO", dest="logLevel", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], help="Set the logging level")
+    parser.add_argument("-f", "--logfile", default=None, help="set logfile")
 
     args = parser.parse_args(argv)
+
+    logging.basicConfig(level=logging.getLevelName(args.logLevel), filename=args.logfile, format="%(asctime)s - %(levelname)-8s - %(message)s")
 
     logger.info("Starting on %s and %s with prefix %s", args.device, args.broker, args.prefix)
     loop = asyncio.get_event_loop()

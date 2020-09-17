@@ -5,6 +5,7 @@
 
 DEVICE=ttyAMA0
 HOST=localhost
+LOGLEVEL=WARNING
 
 # Add /boot to fstab
 if [ -e /boot/settings ]; then
@@ -16,7 +17,8 @@ case "$1" in
 	start)
 		printf "Starting mqtt2mendeleev on ${DEVICE}..."
 		start-stop-daemon -q -S -b -m -p /var/run/mqtt2mendeleev_${DEVICE}.pid \
-			--exec /usr/bin/python3 -- /usr/bin/mqtt2mendeleev.py -b ${HOST} -d /dev/${DEVICE}
+			--exec /usr/bin/python3 -- /usr/bin/mqtt2mendeleev.py -b ${HOST} \
+			-d /dev/${DEVICE} -l ${LOGLEVEL} -f /var/log/mqtt2mendeleev
 		[ $? = 0 ] && echo "OK" || echo "FAIL"
 	;;
 	stop)
