@@ -3,6 +3,7 @@ import socket
 import logging
 import asyncio
 import sys
+import os
 import argparse
 
 from mendeleev import MendeleevProtocol
@@ -14,6 +15,7 @@ CLIENT_ID = "mqtt2mendeleev_bridge"
 
 def update():
     logger.info("update")
+    os.system("/bin/sh /usr/bin/update.sh 1")
 
 def sensor_test():
     logger.info("sensor test")

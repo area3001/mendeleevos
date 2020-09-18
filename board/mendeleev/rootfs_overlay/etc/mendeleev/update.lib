@@ -1,0 +1,110 @@
+FW_LATESTURL=https://api.github.com/repos/area3001/ArduinoMendeleev/releases/latest
+OS_LATESTURL=https://api.github.com/repos/area3001/mendeleevos/releases/latest
+
+blinkled() {
+  cd /sys/class/leds/$1
+  echo timer > trigger
+  echo $2 > delay_on
+  echo $2 > delay_off
+}
+
+# Set LED brightness value
+setled() {
+  cd /sys/class/leds/$1
+  echo none > trigger
+  echo $2 > brightness
+}
+
+# download latest firmware
+download_latest()
+{
+  url=$1
+  dir=$2
+
+  mkdir -p ${dir}
+
+  if curl -sL --show-error --fail -o ${dir}/latest.json ${url}; then
+    # success
+    TAG=`jq -r .tag_name ${dir}/latest.json`
+
+    # downoad the release if we don't have it yet
+    if [ ! -d ${dir}/${TAG} ]; then
+      logger -s -t "OTA" -p 5 "Downloading tag ${TAG}..."
+      mkdir -p ${dir}/${TAG}
+      cd ${dir}/${TAG}
+      for ASSETURL in $(jq -r '.assets[]|select((.name|startswith("release.bin")) or (.name=="zImage")).browser_download_url' ${dir}/latest.json); do
+        if curl -sLO --show-error --fail ${ASSETURL}; then
+          logger -s -t "OTA" -p 5 "downloaded ${ASSETURL}"
+        else
+          logger -s -t "OTA" -p 3 "Failed to download ${ASSETURL}!"
+          blinkled ext_led 100
+          return 1
+        fi
+      done
+    else
+      logger -s -t "OTA" -p 4 "Tag ${TAG} already downloaded"
+    fi
+    ln -snf ${TAG} ${dir}/latest
+  else
+    logger -s -t "OTA" -p 3 "Failed to get json!"
+    blinkled ext_led 100
+    return 1
+  fi
+  return 0
+}
+
+# update kernel
+update_os()
+{
+  dir=$1
+
+  logger -s -t "OTA" -p 5 "starting OS update..."
+  if ! download_latest ${OS_LATESTURL} ${dir}; then
+    logger -s -t "OTA" -p 3 "Failed downloading latest files"
+    return 1
+  fi
+
+  LATEST_VERSION=$(readlink ${OS_DIR}/latest)
+  . /etc/os-release
+
+  if [ "${LATEST_VERSION}" = "${MENDELEEV_VERSION}" ]; then
+    logger -s -t "OTA" -p 4 "Version ${LATEST_VERSION} is already installed"
+    return 1
+  fi
+
+  # apply the release
+  logger -s -t "OTA" -p 5 "Updating to ${LATEST_VERSION}..."
+  cd ${OS_DIR}/latest
+  mount -o remount,rw /boot
+  cp ${OS_DIR}/latest/zImage /boot/zImage
+  logger -s -t "OTA" -p 5 "rebooting..."
+  sync
+  reboot
+  exit 0
+}
+
+# update arduino
+update_fw()
+{
+  dir=$1
+  host=$2
+
+  logger -s -t "OTA" -p 5 "starting arduino update..."
+  if ! download_latest ${FW_LATESTURL} ${dir}; then
+    logger -s -t "OTA" -p 3 "Failed downloading latest files"
+    return 1
+  fi
+
+  # apply the firmware
+  cd ${FW_DIR}/latest
+  if sha1sum -sc release.bin.sha1; then
+    logger -s -t "OTA" -p 5 "Updating arduino to ${TAG}..."
+    cat ${FW_DIR}/latest/release.bin | mosquitto_pub -h ${HOST} -t mendeleev/255/ota -s
+    setled ext_led 0
+  else
+    logger -s -t "OTA" -p 3 "Sha1 sum is not correct!"
+    blinkled ext_led 100
+    return 1
+  fi
+  return 0
+}
