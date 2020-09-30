@@ -6,6 +6,8 @@ import sys
 import os
 import argparse
 
+from scapy.packet import NoPayload
+
 from mendeleev import MendeleevProtocol
 
 logger = logging.getLogger(__name__)
@@ -126,7 +128,9 @@ class MendeleevBridge:
                 await self.m.send_ota(element, msg.payload, self.timeout)
             else:
                 response = await self.m.send_cmd(element, cmd, msg.payload, self.timeout)
-                logger.debug("reponse for command %s to %d: %s", cmd, element, response)
+                if not isinstance(response, NoPayload):
+                    logger.debug("reponse for command %s to %d: %s", cmd, element, response.show(dump=True))
+                    return response
 
     async def main(self):
         self.disconnected = self.loop.create_future()
@@ -149,6 +153,9 @@ class MendeleevBridge:
             msg = await self.got_message
             try:
                 result = await self.process_msg(msg)
+                if result:
+                    result = result.load.decode("utf-8")
+                self.client.publish(msg.topic + "/ack", result, qos=1)
             except asyncio.TimeoutError:
                 logger.warning("timeout waiting for response for %s", msg.topic)
                 self.client.publish(msg.topic + "/nack", qos=1)
@@ -160,8 +167,6 @@ class MendeleevBridge:
                 logger.error("error when processing %s", msg.topic)
                 logger.exception(e)
                 self.client.publish(msg.topic + "/nack", qos=1)
-            else:
-                self.client.publish(msg.topic + "/ack", result, qos=1)
             self.got_message = None
 
         self.client.disconnect()
