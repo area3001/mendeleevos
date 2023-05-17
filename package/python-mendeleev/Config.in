@@ -4,15 +4,16 @@ config BR2_PACKAGE_PYTHON_MENDELEEV
 	select BR2_PACKAGE_PYTHON_SCAPY
 	select BR2_PACKAGE_PYTHON_SERIAL_ASYNCIO
 	select BR2_PACKAGE_PYTHON_ASYNC_TIMEOUT
+	select BR2_PACKAGE_MOSQUITTO
+	select BR2_PACKAGE_PYTHON_ASYNCIO_MQTT
 	help
 	  pymendeleev
 
 if BR2_PACKAGE_PYTHON_MENDELEEV
 
-config BR2_PYMENDELEEV_BRIDGE
-	bool "install mqtt2mendeleev bridge"
-	select BR2_PACKAGE_MOSQUITTO
+config BR2_PYMENDELEEV_INIT_SCRIPT
+	bool "install mqtt2mendeleev init script"
 	help
-	  Install mqtt2mendeleev bridge
+	  Install mqtt2mendeleev init script
 
 endif

@@ -12,7 +12,7 @@ PYTHON_MENDELEEV_SETUP_TYPE = setuptools
 
 ifeq ($(BR2_PYMENDELEEV_INIT_SCRIPT),y)
 define PYTHON_MENDELEEV_INSTALL_INIT_SYSV
-	$(INSTALL) -D -m 0755 $(PYMQTT2MENDELEEV_PKGDIR)/S90mqtt2mendeleev.sh \
+	$(INSTALL) -D -m 0755 $(PYTHON_MENDELEEV_PKGDIR)/S90mqtt2mendeleev.sh \
 		$(TARGET_DIR)/etc/init.d/S90mqtt2mendeleev.sh
 endef
 endif

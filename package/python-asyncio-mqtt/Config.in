@@ -1,0 +1,9 @@
+config BR2_PACKAGE_PYTHON_ASYNCIO_MQTT
+	bool "python-asyncio-mqtt"
+	select BR2_PACKAGE_PYTHON3_SSL
+	select BR2_PACKAGE_PYTHON_PAHO_MQTT
+	help
+	  asyncio-mqtt combines the stability of the time-proven paho-mqtt
+	  library with a modern, asyncio-based interface.
+
+	  https://github.com/sbtinstruments/asyncio-mqtt

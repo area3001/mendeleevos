@@ -1,8 +1,0 @@
-config BR2_PACKAGE_PYMQTT2MENDELEEV
-	bool "mqtt2mendeleev"
-	select BR2_PACKAGE_PYTHON_MENDELEEV
-	select BR2_PACKAGE_MOSQUITTO
-	help
-	  MQTT to Mendeleev project
-
-	  https://area3001.com

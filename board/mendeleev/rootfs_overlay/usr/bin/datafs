@@ -47,7 +47,7 @@ else
 fi
 
 # sync files from the read-only filesystem to the read-write filesystem
-for DIR in /etc/dropbear /var/log /var/lock /updates; do
+for DIR in /etc/dropbear /var/log /var/lock /updates /var/www; do
   echo "[dat] $DIR"
   mkdir -p "${TMPDIR}${DIR}"
   rsync -a --ignore-existing "$DIR/" "${TMPDIR}${DIR}/"
