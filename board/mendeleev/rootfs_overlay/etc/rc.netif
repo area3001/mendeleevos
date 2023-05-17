@@ -7,7 +7,7 @@ PATH=/usr/sbin:/sbin:/usr/bin:/bin
 case "$ACTION" in
   add)
   case ${INTERFACE} in
-    lo|eth*|wlan*|usb*)
+    lo|eth*|wlan*|usb*|br*)
     INTERFACE=${INTERFACE} ACTION=remove "$0"
     INTERFACE=${INTERFACE} ACTION=change "$0"
     ;;
@@ -25,21 +25,23 @@ case "$ACTION" in
     ;;
     wlan*)
     ip link set ${INTERFACE} up
-    # do not run a dhcp client on wlan0
-    ip addr add 83.223.64.143/24 dev ${INTERFACE}
     cp /etc/hostapd.conf /run/hostapd-${INTERFACE}.conf
     hostapd -B /run/hostapd-${INTERFACE}.conf
+    ip link set ${INTERFACE} master br0
     ;;
     usb*)
     ip link set ${INTERFACE} up
-    # do not run a dhcp client on usb0
+    ip link set ${INTERFACE} master br0
+    ;;
+    br*)
+    ip link set dev ${INTERFACE} up
     ip addr add 83.223.64.143/24 dev ${INTERFACE}
     ;;
   esac
   ;;
   remove)
   case "${INTERFACE}" in
-    eth*|wlan*|usb*)
+    br*|eth*|wlan*|usb*)
     pkill -f "udhcp.*${INTERFACE}"
     pkill -f "ifplugd.*${INTERFACE}"
     pkill -f "hostapd.*${INTERFACE}"
@@ -47,6 +49,7 @@ case "$ACTION" in
       rm -f /run/hostapd-${INTERFACE}.conf
     fi
     ip addr flush "${INTERFACE}"
+    ip link set ${INTERFACE} nomaster
     ip link set ${INTERFACE} down
     ;;
     lo)

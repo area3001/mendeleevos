@@ -1,3 +1,6 @@
+USB_DWC2_DUAL_ROLE=y
+# USB_DWC2_HOST is not set
+
 CONFIG_USB_GADGET=y
 # CONFIG_USB_ZERO is not set
 # CONFIG_USB_AUDIO is not set

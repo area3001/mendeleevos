@@ -14,20 +14,7 @@ cp "${BOARD_DIR}/config.txt" "${BINARIES_DIR}/rpi-firmware"
 # Adjust the settings file
 cp "${BOARDS_DIR}/mendeleev/settings" "${BINARIES_DIR}/settings"
 
-# compile and copy self-defined overlays
-DTC=`ls ${BUILD_DIR}/linux-*/scripts/dtc/dtc | head -n1`
-if ! [ -x $DTC ]; then
-	DTC=dtc
-else
-	echo "Using $DTC"
-fi
 
-for DTS in ${BOARD_DIR}/*-overlay.dts; do
-	DTSNAME=`basename ${DTS%%-overlay.dts}`
-	echo "Compile $DTSNAME"
-	$DTC -@ -O dtb $DTS -o ${BINARIES_DIR}/rpi-firmware/overlays/${DTSNAME}.dtbo
-	echo "dtoverlay=${DTSNAME}" >> ${BINARIES_DIR}/rpi-firmware/config.txt
-done
 
 rm -rf "${GENIMAGE_TMP}"
 

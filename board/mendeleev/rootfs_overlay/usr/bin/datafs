@@ -58,3 +58,6 @@ if [ "$TMPDIR" != "$DATDIR" ]; then
   umount "$TMPDIR"
   rmdir "$TMPDIR"
 fi
+
+# set up network bridge
+ip link add name br0 type bridge
