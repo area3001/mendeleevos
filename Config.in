@@ -1,8 +1,13 @@
-source "$BR2_EXTERNAL_MENDELEEV_PATH/package/mqtt2mendeleev/Config.in"
-source "$BR2_EXTERNAL_MENDELEEV_PATH/package/pymqtt2mendeleev/Config.in"
-source "$BR2_EXTERNAL_MENDELEEV_PATH/package/libmendeleev/Config.in"
-source "$BR2_EXTERNAL_MENDELEEV_PATH/package/uart-enable-rs485/Config.in"
-source "$BR2_EXTERNAL_MENDELEEV_PATH/package/inputevent/Config.in"
-source "$BR2_EXTERNAL_MENDELEEV_PATH/package/libartnet/Config.in"
-source "$BR2_EXTERNAL_MENDELEEV_PATH/package/artnet2mendeleev/Config.in"
-source "$BR2_EXTERNAL_MENDELEEV_PATH/package/python-mendeleev/Config.in"
+menu "packages"
+  source "$BR2_EXTERNAL_MENDELEEV_PATH/package/mqtt2mendeleev/Config.in"
+  source "$BR2_EXTERNAL_MENDELEEV_PATH/package/libmendeleev/Config.in"
+  source "$BR2_EXTERNAL_MENDELEEV_PATH/package/uart-enable-rs485/Config.in"
+  source "$BR2_EXTERNAL_MENDELEEV_PATH/package/inputevent/Config.in"
+  source "$BR2_EXTERNAL_MENDELEEV_PATH/package/libartnet/Config.in"
+  source "$BR2_EXTERNAL_MENDELEEV_PATH/package/artnet2mendeleev/Config.in"
+  source "$BR2_EXTERNAL_MENDELEEV_PATH/package/python-mendeleev/Config.in"
+endmenu
+
+menu "configuration"
+
+endmenu

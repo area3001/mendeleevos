@@ -1,0 +1,57 @@
+#!/bin/sh
+
+# fix udev stripping sbin from path
+PATH=/usr/sbin:/sbin:/usr/bin:/bin
+
+# Main action handling
+case "$ACTION" in
+  add)
+  case ${INTERFACE} in
+    lo|eth*|wlan*|usb*)
+    INTERFACE=${INTERFACE} ACTION=remove "$0"
+    INTERFACE=${INTERFACE} ACTION=change "$0"
+    ;;
+  esac
+  ;;
+  change)
+  case "${INTERFACE}" in
+    lo)
+    ip link set ${INTERFACE} up
+    ;;
+    eth*)
+    ip link set ${INTERFACE} up
+    # run a dhcp client on ethernet devices
+    ifplugd -i ${INTERFACE} -u1 -d3 -I -r /etc/rc.netiflink
+    ;;
+    wlan*)
+    ip link set ${INTERFACE} up
+    # do not run a dhcp client on wlan0
+    ip addr add 83.223.64.143/24 dev ${INTERFACE}
+    cp /etc/hostapd.conf /run/hostapd-${INTERFACE}.conf
+    hostapd -B /run/hostapd-${INTERFACE}.conf
+    ;;
+    usb*)
+    ip link set ${INTERFACE} up
+    # do not run a dhcp client on usb0
+    ip addr add 83.223.64.143/24 dev ${INTERFACE}
+    ;;
+  esac
+  ;;
+  remove)
+  case "${INTERFACE}" in
+    eth*|wlan*|usb*)
+    pkill -f "udhcp.*${INTERFACE}"
+    pkill -f "ifplugd.*${INTERFACE}"
+    pkill -f "hostapd.*${INTERFACE}"
+    if [ -e /run/hostapd-${INTERFACE}.conf ]; then
+      rm -f /run/hostapd-${INTERFACE}.conf
+    fi
+    ip addr flush "${INTERFACE}"
+    ip link set ${INTERFACE} down
+    ;;
+    lo)
+    ip link set ${INTERFACE} down
+    ;;
+  esac
+  ;;
+esac
